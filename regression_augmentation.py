@@ -20,7 +20,7 @@ def augment_pivot(model, augment_point):
 	line_augmented = model.lines[int(augment_point[0])]
 	intercept = line_augmented[0:3] + line_augmented[3:6] * augment_point[1]
 	
-	line_added = np.zeros((9,))
+	line_added = np.zeros((22,))
 	line_added[0:3] = intercept + augment_point[5:8]
 	line_added[3:6] = (line_augmented[0:3] + line_augmented[3:6]) - line_added[0:3]
 	
@@ -35,7 +35,7 @@ def augment_intercept(model, augment_point):
 	intercept = line_augmented[0:3] + line_augmented[3:6] * augment_point[1]
 	
 	length = augment_point[5:8]
-	line_added = np.zeros((9,))
+	line_added = np.zeros((22,))
 	line_added[0:3] = intercept
 	line_added[3:6] = length
 	line_added[6:9] = line_added[3:6] / pow(np.linalg.norm(line_added[3:6]), 2)

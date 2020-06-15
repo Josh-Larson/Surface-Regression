@@ -33,11 +33,11 @@ def extend_line_segments(points, lines):
 		points[p, 1] = (points[p, 1] - min_intercepts[line]) / (max_intercepts[line] - min_intercepts[line] + 1e-7)
 
 
-def initialize_linear(points, lines, topologies, nearby_line):
+def initialize_linear(points, lines, nearby_line):
 	lines_cuda = cuda.to_device(lines)
 	get_nearest_neighbors(points, lines_cuda, nearby_line)
 	features.extend_line_segments[1, 1](points, lines_cuda)
-	update_orthogonalization(lines_cuda, topologies)
+	update_orthogonalization(lines_cuda)
 	lines[:, :] = lines.to_host()
 
 
@@ -47,16 +47,10 @@ def get_nearest_neighbors(points, lines, nearest):
 	features.get_nearest_neighbors[blockspergrid, threadsperblock](points, lines, nearest)
 
 
-def update_orthogonalization(lines, topologies):
+def update_orthogonalization(lines):
 	threadsperblock = 32
 	blockspergrid = (lines.size + (threadsperblock - 1)) // threadsperblock
-	features.update_orthogonalization[blockspergrid, threadsperblock](lines, topologies)
-
-
-def calculate_topology(topologies, nearest_line):
-	threadsperblock = 32
-	blockspergrid = (nearest_line.size + (threadsperblock - 1)) // threadsperblock
-	features.calculate_topology[blockspergrid, threadsperblock](topologies, nearest_line)
+	features.update_orthogonalization[blockspergrid, threadsperblock](lines)
 
 
 def calculate_linear_updates(nearest_line, updates, update_count):
@@ -65,13 +59,13 @@ def calculate_linear_updates(nearest_line, updates, update_count):
 	features.calculate_linear_updates[blockspergrid, threadsperblock](nearest_line, updates, update_count)
 
 
-def calculate_topology_updates(topologies, nearest_line, updates, update_count, line=-1):
+def calculate_topology_updates(lines, nearest_line, updates, update_count, line=-1):
 	threadsperblock = 32
 	blockspergrid = (nearest_line.size + (threadsperblock - 1)) // threadsperblock
-	features.calculate_topology_updates[blockspergrid, threadsperblock](topologies, line, nearest_line, updates, update_count)
+	features.calculate_topology_updates[blockspergrid, threadsperblock](lines, line, nearest_line, updates, update_count)
 
 
-def initialize(points, lines, topologies, nearby_line):
+def initialize(points, lines, nearby_line):
 	get_nearest_neighbors(points, lines, nearby_line)
 	extend_line_segments(nearby_line, lines)
-	update_orthogonalization(lines, topologies)
+	update_orthogonalization(lines)

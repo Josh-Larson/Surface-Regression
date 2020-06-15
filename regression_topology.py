@@ -19,7 +19,7 @@ def do_topology_regression(model, learning_rate=0., line=-1, iterations=0, min_d
 	while iterations <= 0 or iteration < iterations:
 		# Calculates linear regression updates
 		model.updates.clear()
-		features.calculate_topology_updates(model.topologies, model.nearby_line, model.updates.polar_updates, model.updates.update_count, line)
+		features.calculate_topology_updates(model.lines, model.nearby_line, model.updates.updates, model.updates.update_count, line)
 		unused_lines = model.get_unused_lines()
 		if line in unused_lines:
 			return False, 0.0, iteration
@@ -31,13 +31,13 @@ def do_topology_regression(model, learning_rate=0., line=-1, iterations=0, min_d
 		model.remove_unused_lines()
 		model.updates.adjust_by_count()
 		# Failure case: numerical errors/divergence
-		if np.isnan(model.updates.polar_updates).any() or np.isinf(model.updates.polar_updates).any():
+		if np.isnan(model.updates.updates).any() or np.isinf(model.updates.updates).any():
 			return False, 0.0, iteration
 		# Update parameters
 		if line >= 0:
-			model.topologies[line, :7] += learning_rate * model.updates.polar_updates[line, :7]
+			model.lines[line, 15:22] += learning_rate * model.updates.updates[line, 7:14]
 		else:
-			model.topologies[:, :7] += learning_rate * model.updates.polar_updates[:, :7]
+			model.lines[:, 15:22] += learning_rate * model.updates.updates[:, 7:14]
 		# Check delta error stopping criteria
 		current_error = model.get_rmse_topology(line)
 		delta_error = previous_error - current_error

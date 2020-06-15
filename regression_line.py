@@ -17,17 +17,17 @@ def do_linear_regression(model, learning_rate=0.0, iterations=0, min_delta_error
 	previous_error = np.inf
 	while iterations <= 0 or iteration < iterations:
 		# Calculates nearest neighbor, line segment length, and orthogonalization
-		features.initialize(model.points, model.lines, model.topologies, model.nearby_line)
+		features.initialize(model.points, model.lines, model.nearby_line)
 		# Calculates linear regression updates
 		model.updates.clear()
-		features.calculate_linear_updates(model.nearby_line, model.updates.linear_updates, model.updates.update_count)
+		features.calculate_linear_updates(model.nearby_line, model.updates.updates, model.updates.update_count)
 		model.remove_unused_lines()
 		model.updates.adjust_by_count()
 		# Failure case: numerical errors/divergence
-		if np.isnan(model.updates.linear_updates).any() or np.isinf(model.updates.linear_updates).any():
+		if np.isnan(model.updates.updates).any() or np.isinf(model.updates.updates).any():
 			return False, 0.0, iteration
 		# Update parameters
-		model.lines[:, 0:6] += learning_rate * model.updates.linear_updates[:, 0:6]
+		model.lines[:, 0:6] += learning_rate * model.updates.updates[:, 0:6]
 		# Check delta error stopping criteria
 		current_error = model.get_rmse_linear()
 		delta_error = previous_error - current_error

@@ -5,27 +5,23 @@ import math as m
 
 
 class ModelUpdates:
-	def __init__(self, line_count = 1):
+	def __init__(self, line_count=1):
 		self.line_count = line_count
-		self.polar_updates = np.zeros((line_count, 8), dtype=np.float64)
-		self.linear_updates = np.zeros((line_count, 7), dtype=np.float64)
+		self.updates = np.zeros((line_count, 15), dtype=np.float64)
 		self.update_count = np.zeros((line_count, 1), dtype=np.int32)
 	
 	def copy(self):
 		return ModelUpdates(self.line_count)
 	
 	def clear(self):
-		self.polar_updates[:, :] = 0
-		self.linear_updates[:, :] = 0
+		self.updates[:, :] = 0
 		self.update_count[:, :] = 0
 		
 	def adjust_by_count(self):
-		self.polar_updates /= self.update_count
-		self.linear_updates /= self.update_count
+		self.updates /= self.update_count
 	
 	def add_line(self):
-		self.polar_updates = np.concatenate((self.polar_updates, np.zeros((1, 8), dtype=np.float64)))
-		self.linear_updates = np.concatenate((self.linear_updates, np.zeros((1, 7), dtype=np.float64)))
+		self.updates = np.concatenate((self.updates, np.zeros((1, 15), dtype=np.float64)))
 		self.update_count = np.concatenate((self.update_count, np.zeros((1, 1), dtype=np.float64)))
 		self.line_count += 1
 	
@@ -34,8 +30,7 @@ class ModelUpdates:
 	
 	def remove_lines(self, lines):
 		assert(len(lines) == self.line_count)
-		self.polar_updates = self.polar_updates[~lines]
-		self.linear_updates = self.linear_updates[~lines]
+		self.updates = self.updates[~lines]
 		self.update_count = self.update_count[~lines]
 		self.line_count = len(self.update_count)
 
@@ -43,8 +38,7 @@ class ModelUpdates:
 class Model:
 	def __init__(self, points):
 		self.points = points
-		self.lines = np.zeros((1, 9), dtype=np.float32)
-		self.topologies = np.zeros((1, 13), dtype=np.float32)
+		self.lines = np.zeros((1, 22), dtype=np.float64)
 		self.nearby_line = np.zeros((len(points), 8), dtype=np.float64)
 		self.updates = ModelUpdates()
 		
@@ -56,7 +50,6 @@ class Model:
 	def copy(self):
 		ret = Model(self.points)
 		ret.lines = self.lines.copy()
-		ret.topologies = self.topologies.copy()
 		ret.nearby_line = self.nearby_line.copy()
 		ret.updates = self.updates.copy()
 		return ret
@@ -66,23 +59,19 @@ class Model:
 	
 	def get_rmse_topology(self, line):
 		if line < 0:
-			return m.sqrt(abs(np.mean(self.updates.polar_updates[:, 7])))
+			return m.sqrt(abs(np.mean(self.updates.updates[:, 14])))
 		else:
-			return m.sqrt(abs(self.updates.polar_updates[line, 7]))
+			return m.sqrt(abs(self.updates.updates[line, 14]))
 	
 	def sanity_check(self):
 		assert not np.isnan(self.lines).any(), "NaN: lines"
-		assert not np.isnan(self.topologies).any(), "NaN: topologies"
 		assert not np.isnan(self.nearby_line).any(), "NaN: nearby_line"
-		assert not np.isnan(self.updates.polar_updates).any(), "NaN: polar_updates"
-		assert not np.isnan(self.updates.linear_updates).any(), "NaN: linear_updates"
+		assert not np.isnan(self.updates.updates).any(), "NaN: updates"
 		assert not np.isnan(self.updates.update_count).any(), "NaN: update_count"
 		
 		assert not np.isinf(self.lines).any(), "Inf: lines"
-		assert not np.isinf(self.topologies).any(), "Inf: topologies"
 		assert not np.isinf(self.nearby_line).any(), "Inf: nearby_line"
-		assert not np.isinf(self.updates.polar_updates).any(), "Inf: polar_updates"
-		assert not np.isinf(self.updates.linear_updates).any(), "Inf: linear_updates"
+		assert not np.isinf(self.updates.updates).any(), "Inf: updates"
 		assert not np.isinf(self.updates.update_count).any(), "Inf: update_count"
 	
 	def get_unused_lines(self):
@@ -91,12 +80,10 @@ class Model:
 	def remove_unused_lines(self):
 		unused_lines = self.updates.get_unused_lines()
 		self.lines = self.lines[~unused_lines]
-		self.topologies = self.topologies[~unused_lines]
 		self.updates.remove_lines(unused_lines)
 	
 	def add_line(self, line):
-		self.lines = np.concatenate((self.lines, line.reshape((1, 9))))
-		self.topologies = np.concatenate((self.topologies, np.zeros((1, 13))))
+		self.lines = np.concatenate((self.lines, line.reshape((1, 22))))
 		self.normalize_lines()
 		self.updates.add_line()
 	
@@ -110,7 +97,6 @@ class Model:
 
 	def initialize_linear(self):
 		self.sanity_check()
-		features.initialize(self.points, self.lines, self.topologies, self.nearby_line)
+		features.initialize(self.points, self.lines, self.nearby_line)
 		nan_view = np.isnan(self.lines).any(axis=1)
 		self.lines = self.lines[~nan_view]
-		self.topologies = self.topologies[~nan_view]
