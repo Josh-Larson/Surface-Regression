@@ -13,7 +13,7 @@ import time
 c12_host = np.loadtxt('C12.obj', delimiter=' ').astype(np.float32)
 c12 = cuda.to_device(c12_host)
 
-model = Model(cuda.to_device(c12_host))
+model = Model(c12_host)
 print("Calculating initial regression...")
 rline.do_linear_regression(model)
 for i in range(10):

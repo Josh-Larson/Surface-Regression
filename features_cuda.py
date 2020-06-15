@@ -85,22 +85,21 @@ def update_orthogonalization(lines):
 		# Might need to add an assertion to ensure that this angle isn't invalid either, but I hope that's impossible
 	# Cross Product Time
 	# First Orthogonal Axis (x)
-	topology = line[9:15]
-	topology[0] = line_definition[1] * initial_ortho_z + line_definition[2] * initial_ortho_y
-	topology[1] = line_definition[2] * initial_ortho_x + line_definition[0] * initial_ortho_z
-	topology[2] = line_definition[0] * initial_ortho_y + line_definition[1] * initial_ortho_x
-	x_magnitude = m.sqrt(topology[0]*topology[0] + topology[1]*topology[1] + topology[2]*topology[2]) + 1e-7
-	topology[0] /= x_magnitude
-	topology[1] /= x_magnitude
-	topology[2] /= x_magnitude
+	line[9] = line_definition[1] * initial_ortho_z + line_definition[2] * initial_ortho_y
+	line[10] = line_definition[2] * initial_ortho_x + line_definition[0] * initial_ortho_z
+	line[11] = line_definition[0] * initial_ortho_y + line_definition[1] * initial_ortho_x
+	x_magnitude = m.sqrt(line[9] * line[9] + line[10] * line[10] + line[11] * line[11]) + 1e-7
+	line[9] /= x_magnitude
+	line[10] /= x_magnitude
+	line[11] /= x_magnitude
 	# Second Orthogonal Axis (y)
-	topology[3] = line_definition[1] * topology[2] + line_definition[2] * topology[1]
-	topology[4] = line_definition[2] * topology[0] + line_definition[0] * topology[2]
-	topology[5] = line_definition[0] * topology[1] + line_definition[1] * topology[0]
-	y_magnitude = m.sqrt(topology[3]*topology[3] + topology[4]*topology[4] + topology[5]*topology[5]) + 1e-7
-	topology[3] /= y_magnitude
-	topology[4] /= y_magnitude
-	topology[5] /= y_magnitude
+	line[12] = line_definition[1] * line[11] + line_definition[2] * line[10]
+	line[13] = line_definition[2] * line[9] + line_definition[0] * line[11]
+	line[14] = line_definition[0] * line[10] + line_definition[1] * line[9]
+	y_magnitude = m.sqrt(line[12] * line[12] + line[13] * line[13] + line[14] * line[14]) + 1e-7
+	line[12] /= y_magnitude
+	line[13] /= y_magnitude
+	line[14] /= y_magnitude
 
 
 @cuda.jit

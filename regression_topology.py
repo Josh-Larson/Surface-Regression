@@ -30,6 +30,8 @@ def do_topology_regression(model, learning_rate=0., line=-1, iterations=0, min_d
 		line -= decrement
 		model.remove_unused_lines()
 		model.updates.adjust_by_count()
+		if len(unused_lines) > 0:
+			model.initialize_linear()
 		# Failure case: numerical errors/divergence
 		if np.isnan(model.updates.updates).any() or np.isinf(model.updates.updates).any():
 			return False, 0.0, iteration

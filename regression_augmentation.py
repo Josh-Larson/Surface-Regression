@@ -12,8 +12,8 @@ def evaluate_model(model):
 	if not topology_converged:
 		return None
 	
-	# return model, linear_rmse, topology_rmse, linear_iterations, topology_iterations
-	return model, linear_rmse, linear_rmse, linear_iterations, 0
+	return model, linear_rmse, topology_rmse, linear_iterations, topology_iterations
+	# return model, linear_rmse, linear_rmse, linear_iterations, 0
 
 
 def augment_pivot(model, augment_point):
@@ -27,6 +27,7 @@ def augment_pivot(model, augment_point):
 	model_ret = model.copy()
 	model_ret.lines[-1, 3:6] = line_added[0:3] - model_ret.lines[-1, 0:3]
 	model_ret.add_line(line_added)
+	
 	return evaluate_model(model_ret)
 
 
@@ -51,5 +52,10 @@ def augment(model):
 	
 	pivot_result = augment_pivot(model.copy(), augment_point)
 	intercept_result = augment_intercept(model.copy(), augment_point)
+	if pivot_result is None:
+		assert intercept_result is not None
+		return intercept_result
+	if intercept_result is None:
+		return pivot_result
 	
 	return pivot_result if pivot_result[2] < intercept_result[2] else intercept_result
