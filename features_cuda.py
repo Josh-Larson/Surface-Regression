@@ -152,7 +152,7 @@ def calculate_linear_updates(nearest_line, updates, update_count):
 
 
 @cuda.jit
-def calculate_topology_updates(topologies, nearest_line, updates, update_count):
+def calculate_topology_updates(topologies, line_enabled, nearest_line, updates, update_count):
 	# Topologies:       d * abs(t + c) + b * t + a      [7:10] = x   [10:13] = y
 	# Nearest Line:     line_idx, intercept, distance, angle, distance_error, dx, dy, dz
 	p = cuda.grid(1)
@@ -160,6 +160,8 @@ def calculate_topology_updates(topologies, nearest_line, updates, update_count):
 		return
 	point = nearest_line[p]
 	line_index = int(point[0])
+	if line_enabled >= 0 and line_enabled != line_index:
+		return
 	line = topologies[int(point[0])]
 	actual_distance = point[2]
 	projected_x = (point[5]*line[4] + point[6]*line[5] + point[7]*line[6]) / actual_distance

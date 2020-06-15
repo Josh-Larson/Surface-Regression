@@ -65,7 +65,13 @@ def calculate_linear_updates(nearest_line, updates, update_count):
 	features.calculate_linear_updates[blockspergrid, threadsperblock](nearest_line, updates, update_count)
 
 
-def calculate_topology_updates(topologies, nearest_line, updates, update_count):
+def calculate_topology_updates(topologies, nearest_line, updates, update_count, line=-1):
 	threadsperblock = 32
 	blockspergrid = (nearest_line.size + (threadsperblock - 1)) // threadsperblock
-	features.calculate_topology_updates[blockspergrid, threadsperblock](topologies, nearest_line, updates, update_count)
+	features.calculate_topology_updates[blockspergrid, threadsperblock](topologies, line, nearest_line, updates, update_count)
+
+
+def initialize(points, lines, topologies, nearby_line):
+	get_nearest_neighbors(points, lines, nearby_line)
+	extend_line_segments(nearby_line, lines)
+	update_orthogonalization(lines, topologies)

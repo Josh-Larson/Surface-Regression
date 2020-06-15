@@ -4,19 +4,27 @@ from numba import cuda
 from screen import Screen
 from model import Model
 import cv2
-import features
+import regression_line as rline
+import regression_topology as rtop
+import regression_augmentation as raug
 import projection
 import time
 
 c12_host = np.loadtxt('C12.obj', delimiter=' ').astype(np.float32)
 c12 = cuda.to_device(c12_host)
 
-model = Model(c12_host)
-model.linear_regression()
+model = Model(cuda.to_device(c12_host))
+print("Calculating initial regression...")
+rline.do_linear_regression(model)
 for i in range(10):
-	polar_error, linear_error, iterations, update_difference = model.augment_lines()
-	print("Iterations: %d  Polar Error: %f  Linear Error: %f  Delta Error: %f" % (iterations, model.get_rmse_polar(), model.get_rmse_linear(), update_difference))
+	print("Calculating augmentation %d..." % (i+1))
+	model, linear_rmse, topology_rmse, linear_iterations, topology_iterations = raug.augment(model)
+	print("Iterations: %d, %d  Topology Error: %f  Linear Error: %f" % (linear_iterations, topology_iterations, topology_rmse, linear_rmse))
 	print(model.lines)
+
+print("Finalizing topology...")
+rtop.do_topology_regression(model, min_delta_error=1e-4)
+print("Topology Error: %f" % model.get_rmse_topology(line=-1))
 
 # Render
 screen = Screen()
