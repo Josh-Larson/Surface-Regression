@@ -46,6 +46,7 @@ class Model:
 		self.lines[0, 0:3] = points[rand.randint(0, len(points)-1)]
 		self.lines[0, 3:6] = points[rand.randint(0, len(points)-1)] - self.lines[0, 0:3]
 		self.normalize_lines()
+		features.update_orthogonalization(self.lines)
 	
 	def copy(self):
 		ret = Model(self.points)
@@ -55,13 +56,14 @@ class Model:
 		return ret
 	
 	def get_rmse_linear(self):
-		return m.sqrt(abs(np.mean(self.nearby_line[:, 2])))
+		return m.sqrt(np.mean(self.nearby_line[:, 2]))
 	
 	def get_rmse_topology(self, line):
-		if line < 0:
-			return m.sqrt(abs(np.mean(self.updates.updates[:, 14])))
-		else:
-			return m.sqrt(abs(self.updates.updates[line, 14]))
+		return m.sqrt(np.mean(self.nearby_line[:, 2]))
+		# if line < 0:
+		# 	return np.mean(self.updates.updates[:, 14])
+		# else:
+		# 	return m.sqrt(abs(self.updates.updates[line, 14]))
 	
 	def sanity_check(self):
 		assert not np.isnan(self.lines).any(), "NaN: lines"
@@ -81,6 +83,7 @@ class Model:
 		unused_lines = self.updates.get_unused_lines()
 		self.lines = self.lines[~unused_lines]
 		self.updates.remove_lines(unused_lines)
+		return unused_lines
 	
 	def add_line(self, line):
 		self.lines = np.concatenate((self.lines, line.reshape((1, 22))))
@@ -89,14 +92,14 @@ class Model:
 	
 	def normalize_lines(self):
 		self.sanity_check()
-		for line in range(len(self.lines)):
-			line_length = self.lines[line, 3:6]
-			magnitude = np.sum(line_length * line_length)
-			assert(magnitude > 0)
-			self.lines[line, 6:9] = line_length / magnitude
+		# for line in range(len(self.lines)):
+		# 	line_length = self.lines[line, 3:6]
+		# 	magnitude = np.sum(line_length * line_length)
+		# 	assert(magnitude > 0)
+		# 	self.lines[line, 6:9] = line_length / magnitude
 
 	def initialize_linear(self):
 		self.sanity_check()
-		features.initialize(self.points, self.lines, self.nearby_line)
-		nan_view = np.isnan(self.lines).any(axis=1)
-		self.lines = self.lines[~nan_view]
+		# features.initialize(self.points, self.lines, self.nearby_line)
+		# nan_view = np.isnan(self.lines).any(axis=1)
+		# self.lines = self.lines[~nan_view]

@@ -1,5 +1,6 @@
 import numpy as np
 import features
+import regression_line as rline
 
 
 def do_topology_regression(model, learning_rate=0., line=-1, iterations=0, min_delta_error=1e-7):
@@ -14,26 +15,22 @@ def do_topology_regression(model, learning_rate=0., line=-1, iterations=0, min_d
 	"""
 	if learning_rate <= 0:
 		learning_rate = get_best_learning_rates(model)
+		print(learning_rate)
 	iteration = 0
 	previous_error = np.inf
 	while iterations <= 0 or iteration < iterations:
 		# Calculates linear regression updates
 		model.updates.clear()
 		features.calculate_topology_updates(model.lines, model.nearby_line, model.updates.updates, model.updates.update_count, line)
-		unused_lines = model.get_unused_lines()
-		if line in unused_lines:
-			return False, 0.0, iteration
-		decrement = 0
-		for unused_line in unused_lines:
-			if unused_line < line:
-				decrement += 1
-		line -= decrement
 		model.remove_unused_lines()
 		model.updates.adjust_by_count()
-		if len(unused_lines) > 0:
-			model.initialize_linear()
+		if line < 0:
+			assert not (model.updates.update_count <= 0).any()
+		else:
+			assert model.updates.update_count[line] != 0
 		# Failure case: numerical errors/divergence
 		if np.isnan(model.updates.updates).any() or np.isinf(model.updates.updates).any():
+			print("Topology: NaN/Inf")
 			return False, 0.0, iteration
 		# Update parameters
 		if line >= 0:
@@ -44,7 +41,9 @@ def do_topology_regression(model, learning_rate=0., line=-1, iterations=0, min_d
 		current_error = model.get_rmse_topology(line)
 		delta_error = previous_error - current_error
 		previous_error = current_error
+		# print("%03d: %.20f" % (iteration, previous_error))
 		if delta_error < 0:
+			# print("Topology: Diverge  %s" % str(delta_error))
 			return False, current_error, iteration  # Diverging
 		if delta_error < min_delta_error:
 			return True, current_error, iteration  # Met min_delta_error stopping criteria
@@ -76,7 +75,8 @@ def get_best_learning_rate(model, line):
 
 
 def get_best_learning_rates(model):
-	learning_rate = np.zeros((len(model.lines), 1), dtype=np.float64)
-	for line in range(len(model.lines)):
-		learning_rate[line] = get_best_learning_rate(model, line)[1]
-	return learning_rate
+	# learning_rate = np.zeros((len(model.lines), 1), dtype=np.float64)
+	# for line in range(len(model.lines)):
+	# 	learning_rate[line] = get_best_learning_rate(model, line)[1]
+	# return learning_rate
+	return get_best_learning_rate(model.copy(), -1)[1]

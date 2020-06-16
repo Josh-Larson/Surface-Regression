@@ -19,10 +19,10 @@ def project_points(points, projection_matrix):
 	return projected
 
 
-def render_points(points, projection_matrix, screen):
+def render_points(points, nearby_lines, projection_matrix, screen):
 	threadsperblock = 32
 	blockspergrid = (len(points) + (threadsperblock - 1)) // threadsperblock
-	projection.render_points[blockspergrid, threadsperblock](points, projection_matrix, screen)
+	projection.render_points[blockspergrid, threadsperblock](points, nearby_lines, projection_matrix, screen)
 
 
 def createRot(RPY, degrees=False):

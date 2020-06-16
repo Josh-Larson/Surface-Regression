@@ -22,7 +22,7 @@ def project_points(points, projection_matrix, projected):
 
 
 @cuda.jit
-def render_points(points, projection_matrix, screen):
+def render_points(points, nearby_lines, projection_matrix, screen):
 	p = cuda.grid(1)
 	if p >= len(points):
 		return
@@ -30,10 +30,30 @@ def render_points(points, projection_matrix, screen):
 	px = point[0]
 	py = point[1]
 	pz = point[2]
+	color = nearby_lines[p, 0]
 	x = px * projection_matrix[0, 0] + py * projection_matrix[0, 1] + pz * projection_matrix[0, 2] + projection_matrix[0, 3]
 	y = px * projection_matrix[1, 0] + py * projection_matrix[1, 1] + pz * projection_matrix[1, 2] + projection_matrix[1, 3]
 	z = px * projection_matrix[2, 0] + py * projection_matrix[2, 1] + pz * projection_matrix[2, 2] + projection_matrix[2, 3]
 	u = int(round(x / z))
 	v = int(round(y / z))
 	if 0 <= u < 640 and 0 <= v < 480:
-		screen[v, u, 2] = 1
+		if color == 0:
+			screen[v, u, 1] = 1
+		elif color == 1:
+			screen[v, u, 2] = 1
+		elif color == 2:
+			screen[v, u, 0] = 1
+			screen[v, u, 1] = 1
+		elif color == 3:
+			screen[v, u, 1] = 1
+			screen[v, u, 2] = 1
+		elif color == 4:
+			screen[v, u, 0] = 1
+			screen[v, u, 1] = 1
+			screen[v, u, 2] = 1
+		elif color == 5:
+			screen[v, u, 0] = 0.5
+			screen[v, u, 1] = 0.5
+		else:
+			screen[v, u, 1] = 0.5
+			screen[v, u, 2] = 0.5

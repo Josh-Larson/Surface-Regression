@@ -21,7 +21,7 @@ class Screen:
 		projected = self.projection_matrix @ np.concatenate((point, [1]))
 		return projected[:2] / projected[2]
 	
-	def render(self, points, angle):
+	def render(self, points, nearby_lines, angle):
 		start_time = time.time_ns()
 		self.screen[:, :] = 0
 		x = m.cos(angle) * 25
@@ -30,7 +30,7 @@ class Screen:
 		camera = cuda.to_device(self.projection_matrix)
 		screen_device = cuda.to_device(self.screen)
 		projection.clear_screen(screen_device)
-		projection.render_points(points, camera, screen_device)
+		projection.render_points(points, nearby_lines, camera, screen_device)
 		self.screen = screen_device.copy_to_host()
 		end_time = time.time_ns()
 		self.render_time = (end_time - start_time) / 1000000
